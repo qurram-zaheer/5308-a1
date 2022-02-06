@@ -1,5 +1,6 @@
 package com.assignment1.main;
 
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
@@ -7,6 +8,8 @@ public class DatabaseHandler {
     Connection instanceConn = null;
     String connString;
     String instanceDbName;
+    CSVHandler csvHandler;
+
 
     public void getConnection(String inpConnString) throws SQLException {
         System.out.println("Connection String: " + inpConnString);
@@ -15,7 +18,12 @@ public class DatabaseHandler {
     }
 
     public void generateConnString(Properties props) {
-        connString = String.format("jdbc:mysql://%s:%s/?user=%s&password=%s", props.getProperty("host"), props.getProperty("port"), props.getProperty("user"), props.getProperty("password"));
+        generateConnString(props, "");
+    }
+
+    public void generateConnString(Properties props, String databasename) {
+        instanceDbName = databasename;
+        connString = String.format("jdbc:mysql://%s:%s/%s?user=%s&password=%s", props.getProperty("host"), props.getProperty("port"), databasename, props.getProperty("user"), props.getProperty("password"));
     }
 
 
@@ -37,7 +45,7 @@ public class DatabaseHandler {
             rs = instanceConn.getMetaData().getCatalogs();
             while (rs.next()) {
                 String foundName = rs.getString(1);
-                if (foundName.equals(dbName)) {
+                if (foundName.equals(dbName.toLowerCase())) {
                     return true;
                 }
             }
@@ -82,7 +90,7 @@ public class DatabaseHandler {
             ResultSet rs = md.getTables(null, instanceDbName, null, new String[]{"TABLE"});
             while (rs.next()) {
                 String name = rs.getString("TABLE_NAME");
-                if (name.equals(tableName)) {
+                if (name.equals(tableName.toLowerCase())) {
                     return true;
                 }
             }
@@ -136,7 +144,6 @@ public class DatabaseHandler {
             }
             sql.append(sj);
             String templateString = sql.toString();
-            System.out.println(templateString);
 
             PreparedStatement pstmt = instanceConn.prepareStatement(templateString);
 
@@ -145,7 +152,6 @@ public class DatabaseHandler {
                 for (int i = 0; i < record.length; i++) {
                     pstmt.setString(i + 2, record[i]);
                 }
-                System.out.println(pstmt);
                 pstmt.addBatch();
             }
 
@@ -155,6 +161,40 @@ public class DatabaseHandler {
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-
     }
+
+    public List<String[]> queryExecution(String query) throws SQLException {
+        List<String[]> resultList = new ArrayList<>();
+
+        Statement stmt = instanceConn.createStatement();
+        boolean isResultSet = stmt.execute(query);
+        if (isResultSet) {
+            ResultSet rs = stmt.getResultSet();
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            String[] row = new String[columnCount];
+
+            for (int i = 1; i <= columnCount; i++) {
+                row[i - 1] = metaData.getColumnName(i);
+            }
+            resultList.add(row);
+
+            while (rs.next()) {
+                String[] temp = new String[columnCount];
+                for (int i = 1; i <= columnCount; i++) {
+                    temp[i - 1] = rs.getString(i);
+                }
+                resultList.add(temp);
+                temp = null;
+            }
+        }
+        return resultList;
+    }
+
+    public void queryDriver(String query) throws SQLException, IOException {
+        csvHandler = new CSVHandler();
+        List<String[]> resultList = queryExecution(query);
+        csvHandler.writeListToCSV(resultList);
+    }
+
 }

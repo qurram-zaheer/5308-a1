@@ -8,10 +8,8 @@ import java.util.Properties;
 
 public class DbWrapper {
 
-    public static Properties getConfig() {
-        ConfigHandler handler = new ConfigHandler();
-        Properties properties = handler.readData("config.properties");
-        return properties;
+    public static Properties getConfig(ConfigHandler handler) {
+        return handler.readData("config.properties");
     }
 
     public static List<String[]> fileHandler(String filename) {
@@ -43,20 +41,41 @@ public class DbWrapper {
         databaseOps(filename, props, db, data);
     }
 
+    public static void query(String query, DatabaseHandler db) throws SQLException, IOException {
+        System.out.println(query);
+        db.queryDriver(query);
+    }
+
     public static void main(String[] args) throws SQLException {
-        Properties properties = getConfig();
+        ConfigHandler handler = new ConfigHandler();
+        Properties properties = getConfig(handler);
 
         DatabaseHandler db = new DatabaseHandler();
-        db.generateConnString(properties);
-        String connStr = db.connString;
-        db.getConnection(connStr);
+        String connStr;
+
 
         String command = args[0];
         switch (command) {
-            case "init":
+            case "init" -> {
+                db.generateConnString(properties);
+                connStr = db.connString;
+                db.getConnection(connStr);
                 init(args[1], properties, db);
-            case "query":
-                System.out.println("query");
+            }
+            case "query" -> {
+                db.generateConnString(properties, args[1]);
+                connStr = db.connString;
+                db.getConnection(connStr);
+                try {
+                    query(args[2], db);
+                } catch (SQLException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            default -> {
+                System.out.println("Please enter appropriate command");
+                System.exit(0);
+            }
         }
     }
 }

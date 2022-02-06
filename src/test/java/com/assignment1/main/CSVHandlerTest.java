@@ -25,6 +25,8 @@ public class CSVHandlerTest {
         testList1 = new ArrayList<>();
         testList1.add(new String[]{"Header 1", "Header 2", "Header 3"});
         testList1.add(new String[]{"a", "b", "c"});
+        testList1.add(new String[]{"d", "e", "f"});
+        testList1.add(new String[]{"g", "h", "i"});
     }
 
     @AfterEach
@@ -56,6 +58,7 @@ public class CSVHandlerTest {
     public void blankHeaderCsv() {
         assertThrows(IOException.class, () -> csvHandler.readData("blankHeader.csv"));
     }
+    
 
     private void assertListEquals(List<String[]> testList, List<String[]> innerDataList) {
         if (testList.size() != innerDataList.size())

@@ -3,7 +3,9 @@ package com.assignment1.main;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
 
 public class CSVHandler {
     public List<String[]> readData(String filename) throws IOException {
@@ -42,5 +44,21 @@ public class CSVHandler {
                 throw new IOException("Blank headers not allowed in CSV");
         }
         return data;
+    }
+
+    public void writeListToCSV(List<String[]> resultList) throws IOException {
+        FileWriter file = new FileWriter("results.csv");
+        PrintWriter write = new PrintWriter(file);
+        StringBuilder sb = new StringBuilder();
+        for (String[] record : resultList) {
+            StringJoiner sj = new StringJoiner(",");
+            for (String r : record) {
+                sj.add(r);
+            }
+            sb.append(sj.toString()).append("\n");
+        }
+        write.write(sb.toString());
+        write.close();
+        file.close();
     }
 }
